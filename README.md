@@ -1,8 +1,9 @@
-# Key Light for BUSY Bar
+# Key Light Remote
 
 Control your Elgato Key Light from your BUSY Bar: turn it on and off, set brightness and color temperature with
 the wheel, and switch between four presets. The app runs on the BUSY Bar itself and talks to the light over your
-network, so no computer has to be on.
+network. Changing the light currently needs a small relay running on a computer on your network (a BUSY Bar firmware
+limitation — see [Setup](#setup)); seeing its status does not.
 
 ![Key Light on a BUSY Bar: a brightness bar, 40 %, 4700 K and the preset column](screenshot.png)
 
@@ -20,10 +21,14 @@ network, so no computer has to be on.
    reserve it in your router (a DHCP reservation), so it doesn't change. The BUSY Bar can't look up `.local` names, so
    the app needs the number.
 2. **Install the app** on your BUSY Bar. See [Building from source](#building-from-source) below.
-3. **Enter the address.** Open your BUSY Bar's web interface (its IP address in a browser), go to the Key Light app's
-   settings and set **Key Light IP address**, e.g. `192.168.1.20`. Add a port only if your light uses another one
-   than 9123.
-4. **Start the app** from APPS on your BUSY Bar.
+3. **Run the relay.** To change the light, start `tools/http11-relay.mjs` on a computer on your network, pointed at the
+   light: `node tools/http11-relay.mjs --light 192.168.1.20`. It re-sends the app's requests to the light over
+   HTTP/1.1, because the BUSY Bar sends HTTP/1.0 and a Key Light rejects changes over it
+   ([details](#changing-the-light-needs-a-relay)). Skip this if you only want to see the light's status.
+4. **Enter the address.** Open your BUSY Bar's web interface (its IP address in a browser), go to the app's settings
+   and set **Key Light IP address** to the computer running the relay, e.g. `192.168.1.50`. (Without a relay, point it
+   at the light itself, e.g. `192.168.1.20` — status only.) Add a port only if you changed it from 9123.
+5. **Start the app** from APPS on your BUSY Bar.
 
 The BUSY Bar and the light have to be on the same network. Key Lights only connect to 2.4 GHz Wi-Fi.
 
@@ -174,3 +179,8 @@ CI's token can't create releases, add a GitHub token with `contents: write` as t
 ## License
 
 [MIT](LICENSE)
+
+## Trademarks
+
+Not affiliated with, endorsed by, or sponsored by Elgato or Corsair. "Elgato" and "Key Light" are trademarks of their
+respective owners, used here only to describe compatibility.
