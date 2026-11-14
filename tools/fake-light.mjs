@@ -23,6 +23,7 @@ const HELP_OPTIONS = `Usage: node tools/fake-light.mjs [options]
   --name <text>       the light's display name (default "Desk Light")
   --latency <ms>      answer every request this much later
   --fault "<fault>"   start with a fault, as the fault command takes it, e.g. --fault "http 503 only=put"
+  --reject-http10     answer 400 to a PUT over HTTP/1.0, as a real Key Light Air does
   --quiet             do not log requests
   --help              show this`;
 
@@ -61,6 +62,7 @@ const { values: options } = parseArgs({
     name: { type: "string", default: "Desk Light" },
     latency: { type: "string", default: "0" },
     fault: { type: "string" },
+    "reject-http10": { type: "boolean", default: false },
     quiet: { type: "boolean", default: false },
     help: { type: "boolean", default: false },
   },
@@ -263,6 +265,10 @@ function answer(req, res, raw, fault) {
   if (fault?.kind === "http") return send(res, fault.status);
   if (fault?.kind === "garbage") return send(res, 200, "<html><body>oops</body></html>");
   if (fault?.kind === "bad-shape") return send(res, 200, { numberOfLights: 0, lights: [] });
+  // A real Key Light Air answers 400 to a PUT over HTTP/1.0, the only version the BUSY Bar's fetch sends. With
+  // --reject-http10 the fake does the same, so the HTTP/1.1 relay (tools/http11-relay.mjs) can be tested against it;
+  // off by default, so a plain HTTP/1.0 client still works.
+  if (options["reject-http10"] && req.method === "PUT" && req.httpVersion === "1.0") return send(res, 400);
 
   let body;
   if (raw) {

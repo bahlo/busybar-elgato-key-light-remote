@@ -85,8 +85,30 @@ back.
 ## Compatibility
 
 Works with the Elgato **Key Light**, **Key Light Air** and **Key Light Mini**, which share the same local API for power,
-brightness and color temperature. Tested on the BUSY Bar Emulator (firmware 1.3.1) against a simulated Key Light Air,
-the one in [Testing without a light](#testing-without-a-light).
+brightness and color temperature. The light-side behaviour was verified against a real Key Light Air (firmware 1.0.3);
+the rest was tested on the BUSY Bar Emulator (firmware 1.3.1) against a simulated light, the one in
+[Testing without a light](#testing-without-a-light).
+
+### Changing the light needs a relay
+
+A real Key Light Air rejects a change (`PUT`) sent over HTTP/1.0 with `400 Bad Request`, and the BUSY Bar (and the
+emulator) always sends HTTP/1.0. Reads (`GET`) are fine, so the app shows the light but can't change it on its own.
+
+The app can't work around this itself: the firmware percent-encodes anything unusual in the URL, so a crafted request
+target can't smuggle the version past it (verified by compiling the firmware's own `url.c` and by the light returning
+400 for the resulting bytes). The proper fix is for the firmware to send HTTP/1.1
+([busybar-firmware#1125](https://github.com/busy-app/busybar-firmware/issues/1125)).
+
+Until then, put `tools/http11-relay.mjs` between the app and the light. It takes the app's requests and re-sends each
+to the light over HTTP/1.1, so changes work — from a real BUSY Bar or the emulator.
+
+```sh
+node tools/http11-relay.mjs --light 192.168.1.20    # relay on :9123 -> light at 192.168.1.20
+busy-emulator allow-local 9123                      # with the emulator: let the app reach the relay
+```
+
+Then set the app's **Key Light IP address** to the address where the relay listens (your computer's LAN IP). The relay
+runs on the same machine as the emulator, so nothing extra has to be on.
 
 ## Building from source
 
@@ -138,7 +160,9 @@ curl -d 'clear' localhost:9124                   # back to normal
 | `clear`, `status`, `help` | |
 
 A fault takes `only=get|put`, `times=<n>` (the next n requests, then it recovers) and `rate=<0..1>` (that share of
-requests). `--help` lists the start options, e.g. `--name` and `--port`.
+requests). `--help` lists the start options, e.g. `--name` and `--port`. By default the fake accepts HTTP/1.0 so the
+emulator can change it; `--reject-http10` makes it refuse HTTP/1.0 PUTs like a real Key Light Air, so you can test the
+relay (see [Changing the light needs a relay](#changing-the-light-needs-a-relay)).
 
 ## CI and releases
 
