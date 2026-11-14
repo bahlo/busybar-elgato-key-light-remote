@@ -2,7 +2,10 @@
 // Forwards requests to an Elgato Key Light over HTTP/1.1. A real Key Light Air answers 400 to a PUT over HTTP/1.0,
 // which is the only version the BUSY Bar (and the BUSY Bar Emulator) sends, so changes fail. Point the app's
 // Key Light IP address at this relay instead of the light, and it re-sends each request to the light as HTTP/1.1.
-// Useful when running the app in the emulator against a real light; a real BUSY Bar does not need it.
+// A real BUSY Bar and the emulator both need it to change a real light, until the firmware sends HTTP/1.1
+// (busy-app/busybar-firmware#1125). Reading the light works without it.
+//
+// The relay has no authentication, like the light itself: anyone on the network who can reach it can change the light.
 //
 //   node tools/http11-relay.mjs --light 192.168.1.20        # relay on :9123 -> light at 192.168.1.20:9123
 //   node tools/http11-relay.mjs --light 192.168.1.20 --port 9223
@@ -29,6 +32,12 @@ if (values.help || !values.light) {
 
 const [lightHost, lightPort = "9123"] = values.light.split(":");
 const listenPort = Number(values.port);
+if (!lightHost || ![listenPort, Number(lightPort)].every((p) => Number.isInteger(p) && p > 0 && p < 65536)) {
+  console.error("relay: --light needs a host with an optional port, and --port a port, both from 1 to 65535");
+  process.exit(2);
+}
+// Less than the 5 s after which the BUSY Bar gives up, so the app gets the relay's 502 instead of a timeout.
+const UPSTREAM_TIMEOUT_MS = 4000;
 const log = (...a) => !values.quiet && console.log(new Date().toISOString().slice(11, 19), ...a);
 
 http
@@ -46,7 +55,7 @@ http
         ...(body.length ? { "content-length": String(body.length) } : {}),
       };
       const upstream = http.request(
-        { host: lightHost, port: Number(lightPort), method: req.method, path: req.url, headers, timeout: 5000 },
+        { host: lightHost, port: Number(lightPort), method: req.method, path: req.url, headers, timeout: UPSTREAM_TIMEOUT_MS },
         (up) => {
           const out = [];
           up.on("data", (c) => out.push(c));
@@ -71,6 +80,10 @@ http
       upstream.end(body);
     });
     req.on("error", () => {});
+  })
+  .on("error", (err) => {
+    console.error(`relay: ${err.message}`);
+    process.exit(1);
   })
   .listen(listenPort, values.host, () =>
     log(`relay on ${values.host}:${listenPort} -> light ${lightHost}:${lightPort} (HTTP/1.1)`),

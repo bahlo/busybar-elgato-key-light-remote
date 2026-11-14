@@ -14,7 +14,7 @@ export type Element = TextElement | RectangleElement;
 /** What the wheel changes; a wheel press goes to the next. */
 export type Field = "brightness" | "temperature" | "presets";
 
-export type Status = "no_ip" | "connecting" | "ok" | "error";
+export type Status = "no_settings" | "no_ip" | "connecting" | "ok" | "error";
 
 export interface ViewState {
   /** The light_ip setting as entered. */
@@ -28,6 +28,8 @@ export interface ViewState {
   writeError: string | null;
   /** The shown presets from the settings, in order. */
   presets: Preset[];
+  /** The preset last chosen with the wheel, -1 for none: it tells presets with the same values apart. */
+  chosenPreset: number;
   selected: Field;
   highlighted: boolean;
 }
@@ -99,23 +101,30 @@ function front(state: ViewState): Element[] {
   const elements: Element[] = [];
 
   if (!light) {
-    const text = status === "no_ip" ? "Set light IP" : status === "error" ? "No light" : "Connecting";
+    const text =
+      status === "no_ip"
+        ? "Set light IP"
+        : status === "no_settings"
+          ? "No settings"
+          : status === "error"
+            ? "No light"
+            : "Connecting";
     elements.push({
       id: "message",
       type: "text",
       text,
       font: "small",
-      color: status === "error" ? RED : WHITE,
-      x: 39,
+      color: status === "error" || status === "no_settings" ? RED : WHITE,
+      x: DISPLAY_W / 2,
       y: MID_Y,
       align: "center",
     });
     return elements;
   }
 
-  if (light.on && light.brightness > 0) {
+  if (status === "error" || (light.on && light.brightness > 0)) {
     // Up to 14 px tall, from y 1 to 14 like the outlines; 1 %, the lowest the wheel goes, is a single row. A light set
-    // to 0 elsewhere shows no bar.
+    // to 0 elsewhere shows no bar. A light that stopped answering always has one, in red, also while it is off.
     const height = Math.max(1, Math.round((14 * light.brightness) / 100));
     elements.push({
       id: "gauge_fill",
@@ -186,7 +195,7 @@ function front(state: ViewState): Element[] {
 /** The shown presets, the active one lit and the rest dimmed; none lit when the light matches none. */
 function presetColumn(state: ViewState, light: NonNullable<ViewState["light"]>): Element[] {
   if (!state.presets.length) return [];
-  const active = activePreset(state.presets, light);
+  const active = activePreset(state.presets, light, state.chosenPreset);
   const colors = state.presets.map((preset) => tint(preset.kelvin));
   const height = colors.length * PRESET_PITCH - 1;
   // Centered inside the outline, which leaves 1 px around four squares.
@@ -225,6 +234,7 @@ function presetColumn(state: ViewState, light: NonNullable<ViewState["light"]>):
 }
 
 const STATUS_TEXT: Record<Status, string> = {
+  no_settings: "No settings",
   no_ip: "No IP set",
   connecting: "Connecting...",
   ok: "Connected",
@@ -240,9 +250,11 @@ function back(state: ViewState): Element[] {
       : info.firmwareVersion
     : "-";
   const detail =
-    state.status === "no_ip"
+    state.status === "no_settings"
+      ? "Could not read the app's settings from the BUSY Bar. Trying again."
+      : state.status === "no_ip"
       ? state.host
-        ? `"${state.host}" is not an IP address. Fix it in the BUSY Bar's web interface.`
+        ? `"${state.host}" is not an IP address (.local names do not work). Fix it in the BUSY Bar's web interface.`
         : "Set the light's IP address in the BUSY Bar's web interface."
       : state.status === "error" && state.error
         ? state.error

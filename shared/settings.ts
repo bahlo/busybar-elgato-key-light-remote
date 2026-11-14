@@ -26,8 +26,3 @@ export async function loadValues(): Promise<SettingsValues | null> {
     return null;
   }
 }
-
-/** An app cannot write its settings (the BUSY Bar lets an app only read them): this saves nothing and says so. */
-export async function saveValues(_values: SettingsValues): Promise<void> {
-  console.error(`${manifest.id}: saveValues() saved nothing: an app can read its settings, not write them.`);
-}

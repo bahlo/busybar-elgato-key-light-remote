@@ -5,6 +5,11 @@ the wheel, and switch between four presets. The app runs on the BUSY Bar itself 
 network. Changing the light currently needs a small relay running on a computer on your network (a BUSY Bar firmware
 limitation — see [Setup](#setup)); seeing its status does not.
 
+> [!NOTE]
+> So far the app has only run on the BUSY Bar Emulator, the BUSY Bar's firmware running on a computer, never on a
+> real BUSY Bar. Against a real Key Light Air it works from there. If you try it on a real BUSY Bar, please open an
+> issue and say how it went.
+
 ![Key Light on a BUSY Bar: a brightness bar, 40 %, 4700 K and the preset column](screenshot.png)
 
 ## Features
@@ -20,17 +25,22 @@ limitation — see [Setup](#setup)); seeing its status does not.
 1. **Give the light a fixed IP address.** Look up the light's address in Elgato Control Center or your router, and
    reserve it in your router (a DHCP reservation), so it doesn't change. The BUSY Bar can't look up `.local` names, so
    the app needs the number.
-2. **Install the app** on your BUSY Bar. See [Building from source](#building-from-source) below.
+2. **Install the app** on your BUSY Bar: [build it from source](#building-from-source), or take
+   `me.arne.keylight-<version>.tgz` from a release and [install that](#installing-a-release).
 3. **Run the relay.** To change the light, start `tools/http11-relay.mjs` on a computer on your network, pointed at the
    light: `node tools/http11-relay.mjs --light 192.168.1.20`. It re-sends the app's requests to the light over
    HTTP/1.1, because the BUSY Bar sends HTTP/1.0 and a Key Light rejects changes over it
-   ([details](#changing-the-light-needs-a-relay)). Skip this if you only want to see the light's status.
+   ([details](#changing-the-light-needs-a-relay)). The relay is one file and needs only Node 20 or newer, nothing
+   installed. The light can only be changed while it runs, so put it on a computer that stays on, and give that
+   computer a fixed IP address too. Skip this if you only want to see the light's status.
 4. **Enter the address.** Open your BUSY Bar's web interface (its IP address in a browser), go to the app's settings
    and set **Key Light IP address** to the computer running the relay, e.g. `192.168.1.50`. (Without a relay, point it
    at the light itself, e.g. `192.168.1.20` — status only.) Add a port only if you changed it from 9123.
 5. **Start the app** from APPS on your BUSY Bar.
 
 The BUSY Bar and the light have to be on the same network. Key Lights only connect to 2.4 GHz Wi-Fi.
+
+The app controls one light: the one at the address in its settings.
 
 ## Using it
 
@@ -46,7 +56,8 @@ disappears, the wheel goes back to the value you last changed. After the app sta
 
 ### The front display
 
-- **Left:** a bar that grows with the brightness, in the color of the light.
+- **Left:** a bar that grows with the brightness, in the color of the light. It turns red while the light doesn't
+  answer.
 - **Middle:** the brightness and the color temperature, tinted in the light's color. Both are dimmed while the light
   is off.
 - **Right:** the four presets as small squares, each in its color. The one matching the light is lit.
@@ -60,7 +71,8 @@ connection status. When something goes wrong, the full error is shown below.
 
 Turn to the presets with the wheel button and step through them by turning. Picking a preset sets its brightness and
 color temperature and turns the light on. As soon as you change a value by hand, here or in Control Center, no preset
-is active and all four squares are dimmed.
+is active and all four squares are dimmed. The active preset is the one whose values the light has, so set the light
+to a preset's values by hand and that preset lights up.
 
 Set the presets in the app's settings:
 
@@ -78,21 +90,26 @@ The app can read its settings but not change them, so presets are set in the set
 
 | You see | What to do |
 | --- | --- |
-| **Set light IP** | No address is set yet. Enter it in the app's settings, see [Setup](#setup). |
+| **Set light IP** | No address is set yet, or the one that is set isn't an IP address (the back display says which). A `.local` name doesn't work. Enter the address in the app's settings, see [Setup](#setup). |
+| **No settings** | The app couldn't read its settings from the BUSY Bar. It tries again by itself; if it stays, restart the app. |
 | **Connecting** for a while | The app is waiting for the light's first answer, which can take up to 5 seconds. |
 | **No light**, or a red bar | The light doesn't answer. Check that it's powered and on the network, and that the address in the settings is still right. The back display shows the exact error. |
 | *Inactivity timeout* on the back | Nothing answered at that address. The light may have a new address, or it's on another network. |
-| *socket error* on the back | The connection was refused or dropped. Check the address and port. |
+| *socket error* on the back | The connection was refused or dropped. Check the address and port. With a relay: check that it's running. |
+| A value jumps back, *Last change failed: HTTP 400* on the back | The light refused the change because it came straight from the BUSY Bar. Run the relay and point the app at it, see [Changing the light needs a relay](#changing-the-light-needs-a-relay). |
+| *HTTP 502* on the back | The relay runs but can't reach the light. Check the address after `--light` and that the light is powered. |
 
 While the light doesn't answer, the app tries again less often, up to every 30 seconds, and picks up as soon as it's
 back.
 
 ## Compatibility
 
-Works with the Elgato **Key Light**, **Key Light Air** and **Key Light Mini**, which share the same local API for power,
-brightness and color temperature. The light-side behaviour was verified against a real Key Light Air (firmware 1.0.3);
-the rest was tested on the BUSY Bar Emulator (firmware 1.3.1) against a simulated light, the one in
-[Testing without a light](#testing-without-a-light).
+Tested with a real Elgato **Key Light Air** (firmware 1.0.3). The **Key Light** and **Key Light Mini** share the same
+local API for power, brightness and color temperature and should work as well, but nobody has tried them yet.
+
+On the BUSY Bar's side the app has only run on the BUSY Bar Emulator (firmware 1.3.1), against that Key Light Air and
+against a simulated light, the one in [Testing without a light](#testing-without-a-light). It has not run on a real
+BUSY Bar yet.
 
 ### Changing the light needs a relay
 
@@ -112,8 +129,27 @@ node tools/http11-relay.mjs --light 192.168.1.20    # relay on :9123 -> light at
 busy-emulator allow-local 9123                      # with the emulator: let the app reach the relay
 ```
 
-Then set the app's **Key Light IP address** to the address where the relay listens (your computer's LAN IP). The relay
-runs on the same machine as the emulator, so nothing extra has to be on.
+Then set the app's **Key Light IP address** to the address where the relay listens (that computer's LAN IP). With the
+emulator, the relay can run on the same computer.
+
+The relay only passes requests on to the one light it was started with. Like the light itself, it has no password:
+anyone on your network who can reach it can change the light. It listens on all of the computer's network interfaces;
+`--host <address>` narrows that down.
+
+To keep it running, start it with whatever your system uses for services: a launchd agent on macOS, a systemd unit on
+Linux, or a process manager such as pm2.
+
+## Installing a release
+
+Each [release](../../releases) has the built app attached as `me.arne.keylight-<version>.tgz`. Install it with
+[busy-cli](https://www.npmjs.com/package/@busy-app/cli), which needs Node:
+
+```sh
+npx @busy-app/cli app install me.arne.keylight-0.1.0.tgz                    # a BUSY Bar connected over USB
+npx @busy-app/cli app install me.arne.keylight-0.1.0.tgz --addr <bar-ip>    # or over Wi-Fi
+```
+
+Over Wi-Fi the BUSY Bar's HTTP API has to be on (in its web interface); add `--password <password>` if you set one.
 
 ## Building from source
 
@@ -127,14 +163,17 @@ npm run app:install -- --addr <bar-ip>    # or over Wi-Fi (add --password <passw
 npm run app:run                           # starts it
 ```
 
-`npm run typecheck` checks the types. The code is in `src/`: `main.ts` runs the app, `elgato.ts` talks to the light,
-`view.ts` draws both displays and `presets.ts` reads the presets.
+`npm run typecheck` checks the types and `npm test` runs the unit tests in `test/`. The code is in `src/`: `main.ts`
+runs the app, `elgato.ts` talks to the light, `view.ts` draws both displays and `presets.ts` reads the presets.
+
+The app can also be developed without a BUSY Bar, on the BUSY Bar Emulator, which runs the BUSY Bar's firmware on your
+computer; the `busy-emulator` commands in this file and in [AGENTS.md](AGENTS.md) are its command line.
 
 ## Testing without a light
 
 `tools/fake-light.mjs` is a fake Key Light, posing as a Key Light Air. It answers like a real one and can be told to
-misbehave while it runs.
-It needs only Node.
+misbehave while it runs. It needs only Node. Like the relay it listens on all network interfaces, so stop it when
+you're done.
 
 ```sh
 npm run fake-light    # the light on port 9123, its control port on 127.0.0.1:9124
@@ -172,7 +211,7 @@ relay (see [Changing the light needs a relay](#changing-the-light-needs-a-relay)
 ## CI and releases
 
 CI runs on [Depot CI](https://depot.dev/docs/ci/overview), with the workflows in `.depot/workflows/`: every pull
-request and push to `main` is typechecked and built. Pushing a tag that matches the `version` in
+request and push to `main` is typechecked, tested and built. Pushing a tag that matches the `version` in
 `src/appmeta/manifest.json` (e.g. `0.1.0`) attaches `me.arne.keylight-<version>.tgz` to a GitHub release. If Depot
 CI's token can't create releases, add a GitHub token with `contents: write` as the Depot CI secret `RELEASE_TOKEN`.
 

@@ -49,17 +49,29 @@ export function kelvinToMired(kelvin: number): number {
 }
 
 /**
- * The light's base URL from the app's setting: an IP or host name, with an optional port. Null when it is empty or
- * not something a URL can hold.
+ * The light's base URL from the app's setting: an IP or host name, with an optional port. Null when it is empty, not
+ * something a URL can hold, or a `.local` name, which the BUSY Bar cannot look up.
  */
 export function baseUrl(setting: string): string | null {
-  const host = setting.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
-  if (!/^[A-Za-z0-9.-]+(:\d{1,5})?$/.test(host)) return null;
-  return `http://${host.includes(":") ? host : `${host}:${DEFAULT_PORT}`}`;
+  const address = setting.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  const match = /^([A-Za-z0-9.-]+)(?::(\d{1,5}))?$/.exec(address);
+  if (!match) return null;
+  const host = match[1];
+  const port = match[2] === undefined ? DEFAULT_PORT : Number(match[2]);
+  if (/\.local\.?$/i.test(host) || port < 1 || port > 65535) return null;
+  return `http://${host}:${port}`;
 }
 
 /** A failed request, with a message short enough for the back display. */
-export class LightError extends Error {}
+export class LightError extends Error {
+  /** The HTTP status when the light answered with an error; null when it did not answer or answered nonsense. */
+  readonly status: number | null;
+
+  constructor(message: string, status: number | null = null) {
+    super(message);
+    this.status = status;
+  }
+}
 
 /**
  * The BUSY Bar's fetch rejects with a string ("socket error", "Inactivity timeout"), not an Error; both end up as
@@ -110,7 +122,7 @@ export class KeyLight {
     }
     try {
       const res = await fetch(`${this.base}${path}`, init);
-      if (!res.ok) throw new LightError(`HTTP ${res.status} on ${method} ${path}`);
+      if (!res.ok) throw new LightError(`HTTP ${res.status} on ${method} ${path}`, res.status);
       return await res.json();
     } catch (err) {
       throw asLightError(err);

@@ -88,7 +88,7 @@ const info = {
   hardwareBoardType: 200,
   firmwareBuildNumber: 218,
   firmwareVersion: "1.0.3",
-  serialNumber: "CW44J2A03032",
+  serialNumber: "FAKE00000000",
   displayName: options.name,
   features: ["lights"],
 };
@@ -306,7 +306,7 @@ function answer(req, res, raw, fault) {
   }
 }
 
-/** Requests left hanging, so `clear` or `offline` can let them go. */
+/** Requests left hanging, so `offline` can let them go. */
 const hanging = new Set();
 
 const lightServer = http.createServer((req, res) => {

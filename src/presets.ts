@@ -11,8 +11,8 @@ export interface Preset {
   kelvin: number;
 }
 
-/** The defaults in settings.json, for a value that is missing or not a number. */
-const DEFAULTS: Preset[] = [
+/** The defaults in settings.json (a test keeps the two the same), for a value that is missing or not a number. */
+export const DEFAULTS: Preset[] = [
   { brightness: 100, kelvin: 5600 },
   { brightness: 70, kelvin: 4500 },
   { brightness: 40, kelvin: 3500 },
@@ -36,8 +36,12 @@ export function presetsFrom(values: SettingsValues): Preset[] {
   });
 }
 
-/** The index of the preset the light matches, or -1 when it matches none. */
-export function activePreset(presets: Preset[], light: Preset | null): number {
+/**
+ * The index of the preset the light matches, or -1 when it matches none. When several presets hold the same values,
+ * `preferred`, the one last chosen with the wheel, wins over the first.
+ */
+export function activePreset(presets: Preset[], light: Preset | null, preferred = -1): number {
   if (!light) return -1;
-  return presets.findIndex((p) => p.brightness === light.brightness && p.kelvin === light.kelvin);
+  const matches = (p: Preset | undefined) => !!p && p.brightness === light.brightness && p.kelvin === light.kelvin;
+  return matches(presets[preferred]) ? preferred : presets.findIndex(matches);
 }

@@ -1,5 +1,5 @@
 {
-  "name": "busybar-elgato-key-light",
+  "name": "busybar-key-light-remote",
   "private": true,
   "version": "0.1.0",
   "description": "Control an Elgato Key Light",
@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc",
+    "test": "vitest run",
     "build": "busy-cli build",
     "app:install": "busy-cli app install",
     "app:uninstall": "busy-cli app uninstall",
@@ -22,7 +23,8 @@
   "devDependencies": {
     "@busy-app/cli": "^0.6.0",
     "typescript": "~6.0.3",
-    "vite": "8.1.4"
+    "vite": "8.1.4",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "@busy-app/busy-lib": "^0.21.1"
