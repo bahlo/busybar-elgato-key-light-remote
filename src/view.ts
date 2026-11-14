@@ -7,10 +7,12 @@
 
 import type { RectangleElement, TextElement } from "@busy-app/busy-lib";
 import { KELVIN_MAX, KELVIN_MIN, type LightInfo } from "./elgato";
+import { activePreset, type Preset } from "./presets";
 
 export type Element = TextElement | RectangleElement;
 
-export type Field = "brightness" | "temperature";
+/** What the wheel changes; a wheel press goes to the next. */
+export type Field = "brightness" | "temperature" | "presets";
 
 export type Status = "no_ip" | "connecting" | "ok" | "error";
 
@@ -24,6 +26,8 @@ export interface ViewState {
   error: string | null;
   /** Why the last change was not taken; kept until a change goes through, even when the light answers reads again. */
   writeError: string | null;
+  /** The shown presets from the settings, in order. */
+  presets: Preset[];
   selected: Field;
   highlighted: boolean;
 }
@@ -49,14 +53,45 @@ export function tint(kelvin: number): string {
   return `#${hex(r)}${hex(g)}${hex(b)}FF`;
 }
 
-// Front layout. Measured in the `normal` font: "100%" is 26 px wide, "7000K" 30 px.
+/** A color at a fraction of its brightness, for the presets that are not active. */
+function dim(color: string, factor: number): string {
+  const channel = (i: number) => hex(parseInt(color.slice(i, i + 2), 16) * factor);
+  return `#${channel(1)}${channel(3)}${channel(5)}FF`;
+}
+
+// Front layout. Measured in the `condensed` font: "100%" is 23 px wide, "7000K" 26 px. The outlines are 4 px wider.
 const GAUGE_X = 0;
 const GAUGE_W = 4;
-const BRIGHTNESS_CX = 21;
-const BRIGHTNESS_BOX_W = 30;
-const TEMPERATURE_CX = 55;
-const TEMPERATURE_BOX_W = 34;
+const BRIGHTNESS_BOX_W = 27;
+const TEMPERATURE_BOX_W = 30;
 const MID_Y = 8;
+const DISPLAY_W = 72;
+// The preset column: four 2x2 squares 1 px apart, inside an outline (x 66-71, y 1-15) when presets are
+// selected, 1 px away from the squares on every side.
+const PRESETS_OUTLINE_X = 66;
+const PRESETS_OUTLINE_Y = 1;
+const PRESETS_OUTLINE_W = 6;
+const PRESETS_OUTLINE_H = 15;
+const PRESET_X = 68;
+const PRESET_SIZE = 2;
+const PRESET_PITCH = 3;
+const PRESET_DIM = 0.3;
+
+/**
+ * The centers of the two values. They sit between the gauge and the preset column, or the right edge when there is
+ * none, with the free space split evenly before, between and after them.
+ */
+function valueCenters(withPresets: boolean): { brightness: number; temperature: number } {
+  const left = GAUGE_X + GAUGE_W;
+  const right = withPresets ? PRESETS_OUTLINE_X : DISPLAY_W;
+  const gap = Math.round((right - left - BRIGHTNESS_BOX_W - TEMPERATURE_BOX_W) / 3);
+  const brightnessX = left + gap;
+  const temperatureX = brightnessX + BRIGHTNESS_BOX_W + gap;
+  return {
+    brightness: brightnessX + Math.floor(BRIGHTNESS_BOX_W / 2),
+    temperature: temperatureX + Math.floor(TEMPERATURE_BOX_W / 2),
+  };
+}
 
 function front(state: ViewState): Element[] {
   const { light, status } = state;
@@ -90,8 +125,8 @@ function front(state: ViewState): Element[] {
     return elements;
   }
 
-  if (light.on) {
-    // The frame's inside is 12 px tall; any brightness shows at least one row.
+  if (light.on && light.brightness > 0) {
+    // The frame's inside is 12 px tall; any brightness above 0 shows at least one row.
     const height = Math.max(1, Math.round((12 * light.brightness) / 100));
     elements.push({
       id: "gauge_fill",
@@ -106,19 +141,20 @@ function front(state: ViewState): Element[] {
     });
   }
 
-  const values: { field: Field; text: string; color: string; cx: number; boxWidth: number }[] = [
+  const centers = valueCenters(state.presets.length > 0);
+  const values: { field: Exclude<Field, "presets">; text: string; color: string; cx: number; boxWidth: number }[] = [
     {
       field: "brightness",
       text: `${light.brightness}%`,
       color: light.on ? WHITE : DIM,
-      cx: BRIGHTNESS_CX,
+      cx: centers.brightness,
       boxWidth: BRIGHTNESS_BOX_W,
     },
     {
       field: "temperature",
       text: `${light.kelvin}K`,
       color: light.on ? tint(light.kelvin) : DIM,
-      cx: TEMPERATURE_CX,
+      cx: centers.temperature,
       boxWidth: TEMPERATURE_BOX_W,
     },
   ];
@@ -144,7 +180,7 @@ function front(state: ViewState): Element[] {
         id: `${value.field}_text`,
         type: "text",
         text: value.text,
-        font: "normal",
+        font: "condensed",
         color: value.color,
         x: value.cx,
         y: MID_Y,
@@ -153,7 +189,50 @@ function front(state: ViewState): Element[] {
       },
     );
   }
+
+  elements.push(...presetColumn(state, light));
   return elements;
+}
+
+/** The shown presets, the active one lit and the rest dimmed; none lit when the light matches none. */
+function presetColumn(state: ViewState, light: NonNullable<ViewState["light"]>): Element[] {
+  if (!state.presets.length) return [];
+  const active = activePreset(state.presets, light);
+  const colors = state.presets.map((preset) => tint(preset.kelvin));
+  const height = colors.length * PRESET_PITCH - 1;
+  // Centered inside the outline, which leaves 1 px around four squares.
+  const inside = PRESETS_OUTLINE_H - 2;
+  const top = PRESETS_OUTLINE_Y + 1 + Math.floor((inside - height) / 2);
+  const boxed = state.highlighted && state.selected === "presets";
+  return [
+    {
+      id: "presets_box",
+      type: "rectangle",
+      x: PRESETS_OUTLINE_X,
+      y: PRESETS_OUTLINE_Y,
+      width: PRESETS_OUTLINE_W,
+      height: PRESETS_OUTLINE_H,
+      radius: 1,
+      fill: "none",
+      border_width: 1,
+      border_color: boxed ? WHITE : NONE,
+      z_index: 1,
+    },
+    ...colors.map(
+      (color, i): Element => ({
+        id: `preset_${i}`,
+        type: "rectangle",
+        x: PRESET_X,
+        y: top + i * PRESET_PITCH,
+        width: PRESET_SIZE,
+        height: PRESET_SIZE,
+        fill: "solid",
+        fill_colors: [i === active ? color : dim(color, PRESET_DIM)],
+        border_width: 0,
+        z_index: 2,
+      }),
+    ),
+  ];
 }
 
 const STATUS_TEXT: Record<Status, string> = {

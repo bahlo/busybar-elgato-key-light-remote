@@ -7,6 +7,75 @@
       "label": "Key Light IP address",
       "default": "",
       "max_length": 64
+    },
+    "show_presets": {
+      "type": "boolean",
+      "label": "Show presets",
+      "default": true
+    },
+    "preset_1_brightness": {
+      "type": "integer",
+      "label": "Preset 1 Brightness",
+      "default": 100,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    "preset_1_temperature": {
+      "type": "integer",
+      "label": "Preset 1 Temperature",
+      "default": 5600,
+      "min": 2900,
+      "max": 7000,
+      "step": 50
+    },
+    "preset_2_brightness": {
+      "type": "integer",
+      "label": "Preset 2 Brightness",
+      "default": 70,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    "preset_2_temperature": {
+      "type": "integer",
+      "label": "Preset 2 Temperature",
+      "default": 4500,
+      "min": 2900,
+      "max": 7000,
+      "step": 50
+    },
+    "preset_3_brightness": {
+      "type": "integer",
+      "label": "Preset 3 Brightness",
+      "default": 40,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    "preset_3_temperature": {
+      "type": "integer",
+      "label": "Preset 3 Temperature",
+      "default": 3500,
+      "min": 2900,
+      "max": 7000,
+      "step": 50
+    },
+    "preset_4_brightness": {
+      "type": "integer",
+      "label": "Preset 4 Brightness",
+      "default": 15,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    "preset_4_temperature": {
+      "type": "integer",
+      "label": "Preset 4 Temperature",
+      "default": 2900,
+      "min": 2900,
+      "max": 7000,
+      "step": 50
     }
   }
 }

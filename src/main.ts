@@ -14,7 +14,8 @@ import {
   miredToKelvin,
   type LightState,
 } from "./elgato";
-import { elements, type Element, type ViewState } from "./view";
+import { activePreset, presetsFrom } from "./presets";
+import { elements, type Element, type Field, type ViewState } from "./view";
 
 /** The name the app draws under; the device clears elements by this id. */
 const APP = manifest.id;
@@ -104,6 +105,7 @@ function main(): void {
     status: "connecting",
     error: null,
     writeError: null,
+    presets: [],
     selected: "brightness",
     highlighted: false,
   };
@@ -229,6 +231,8 @@ function main(): void {
     highlightTimer = setTimeout(() => {
       highlightTimer = null;
       state.highlighted = false;
+      // A press that changed nothing does not last: the wheel goes back to what it last changed.
+      state.selected = usable(lastChanged);
       screen.update();
     }, HIGHLIGHT_MS);
     screen.update();
@@ -244,6 +248,41 @@ function main(): void {
     change({ on: state.light.on }, 0);
   };
 
+  /**
+   * Moves one preset down (delta 1) or up the column and applies it, turning the light on. With no preset active,
+   * turning down starts at the first preset and turning up at the last. The ends stop.
+   */
+  const choosePreset = (delta: 1 | -1): boolean => {
+    if (!state.light || !state.presets.length) return false;
+    const current = activePreset(state.presets, state.light);
+    const last = state.presets.length - 1;
+    const next = current === -1 ? (delta > 0 ? 0 : last) : clamp(current + delta, 0, last);
+    if (next === current) return false;
+    const target = state.presets[next];
+    state.light.on = true;
+    state.light.brightness = target.brightness;
+    state.light.kelvin = target.kelvin;
+    change({ on: true, brightness: target.brightness, temperature: kelvinToMired(target.kelvin) }, SEND_DEBOUNCE_MS);
+    return true;
+  };
+
+  /** What the wheel last changed since the app started; brightness until it has changed anything. */
+  let lastChanged: Field = "brightness";
+
+  /** The presets only while they are shown. */
+  const usable = (field: Field): Field => (field === "presets" && !state.presets.length ? "brightness" : field);
+
+  const remember = (field: Field) => {
+    lastChanged = field;
+  };
+
+  /** The next thing a wheel press selects; the presets only while there are any to show. */
+  const nextField = (field: Field): Field => {
+    if (field === "brightness") return "temperature";
+    if (field === "temperature" && state.presets.length) return "presets";
+    return "brightness";
+  };
+
   const turn = (delta: 1 | -1) => {
     const now = Date.now();
     const fast = now - lastTurn < FAST_TURN_MS;
@@ -251,18 +290,22 @@ function main(): void {
     highlight();
     if (!state.light) return;
 
-    if (state.selected === "brightness") {
+    if (state.selected === "presets") {
+      if (choosePreset(delta)) remember("presets");
+    } else if (state.selected === "brightness") {
       const step = fast ? 5 : 1;
       const brightness = clamp(state.light.brightness + delta * step, BRIGHTNESS_MIN, BRIGHTNESS_MAX);
       if (brightness === state.light.brightness) return;
       state.light.brightness = brightness;
       change({ brightness }, SEND_DEBOUNCE_MS);
+      remember("brightness");
     } else {
       const step = (fast ? 4 : 1) * KELVIN_STEP;
       const kelvin = clamp(state.light.kelvin + delta * step, KELVIN_MIN, KELVIN_MAX);
       if (kelvin === state.light.kelvin) return;
       state.light.kelvin = kelvin;
       change({ temperature: kelvinToMired(kelvin) }, SEND_DEBOUNCE_MS);
+      remember("temperature");
     }
   };
 
@@ -285,7 +328,7 @@ function main(): void {
     if (event.action !== "short") return;
     if (event.key === "start") toggle();
     else if (event.key === "ok") {
-      state.selected = state.selected === "brightness" ? "temperature" : "brightness";
+      state.selected = nextField(state.selected);
       highlight();
     } else if (event.key === "back") quit();
   });
@@ -295,6 +338,7 @@ function main(): void {
   void loadValues()
     .then((values) => {
       if (stopped) return;
+      state.presets = presetsFrom(values ?? {});
       const host = typeof values?.light_ip === "string" ? values.light_ip.trim() : "";
       const base = baseUrl(host);
       state.host = host;

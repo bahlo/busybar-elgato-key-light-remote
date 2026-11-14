@@ -6,8 +6,8 @@
 
 export const DEFAULT_PORT = 9123;
 
-/** Brightness in percent. The API takes 0-100, but the lowest few values barely light the panel. */
-export const BRIGHTNESS_MIN = 3;
+/** Brightness in percent, the full range the API takes, although the lowest few values barely light the panel. */
+export const BRIGHTNESS_MIN = 0;
 export const BRIGHTNESS_MAX = 100;
 
 /** Color temperature as the API takes it, in mireds: 143 is about 7000 K, 344 about 2900 K. */

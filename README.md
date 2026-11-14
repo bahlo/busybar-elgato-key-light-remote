@@ -14,13 +14,25 @@ API. The app runs on the BUSY Bar itself; no computer needs to be on.
 | Control | Action |
 | --- | --- |
 | Start / Pause | Turn the light on or off |
-| Wheel press | Switch between brightness and color temperature; the selected value is outlined for 4 s |
-| Wheel turn | Change the selected value: 1 % or 50 K per click, 5 % or 200 K when turned fast |
+| Wheel press | Select brightness, color temperature or the presets, in turn; the selection is outlined for 4 s |
+| Wheel turn | Change the selection: 1 % or 50 K per click, 5 % or 200 K when turned fast; on the presets, move up or down the list |
 | Back | Leave the app |
 
-The front display shows a brightness gauge tinted with the light's color, the brightness and the color temperature.
-The gauge turns red when the light does not answer. The back display shows the light's name, IP address, firmware,
-connection status and, when there is one, the full error.
+The front display shows a brightness gauge tinted with the light's color, the brightness, the color temperature and,
+on the right, the presets. The gauge turns red when the light does not answer. The back display shows the light's
+name, IP address, firmware, connection status and, when there is one, the full error.
+
+### Presets
+
+The column of small squares on the right holds four presets, each in its color. The active one is lit, the others are
+dimmed. Picking a preset sets its brightness and color temperature and turns the light on. Changing a value by hand,
+on the BUSY Bar or in Control Center, leaves no preset active, and all squares dimmed. With none active, turning the
+wheel down starts at the first preset and turning it up at the last.
+
+In the app's settings, **Show presets** turns the column on or off, and **Preset 1 Brightness** (in %) and **Preset 1
+Temperature** (in K) to **Preset 4 Brightness** and **Preset 4 Temperature** set the presets. The defaults are 100 % at
+5600 K, 70 % at 4500 K, 40 % at 3500 K and 15 % at 2900 K. The app can only read its settings, so presets are changed
+there, not on the light's screen.
 
 The app reads the light every 5 s, so changes made in Control Center show up. When the light does not answer, it
 waits longer between tries, up to 30 s. Wheel changes are sent at most every 150 ms, one request at a time.
