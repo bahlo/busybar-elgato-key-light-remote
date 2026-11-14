@@ -14,7 +14,7 @@ API. The app runs on the BUSY Bar itself; no computer needs to be on.
 | Control | Action |
 | --- | --- |
 | Start / Pause | Turn the light on or off |
-| Wheel press | Switch between brightness and color temperature; the selected value is highlighted for 10 s |
+| Wheel press | Switch between brightness and color temperature; the selected value is outlined for 4 s |
 | Wheel turn | Change the selected value: 1 % or 50 K per click, 5 % or 200 K when turned fast |
 | Back | Leave the app |
 

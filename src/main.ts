@@ -20,7 +20,7 @@ import { elements, type Element, type ViewState } from "./view";
 const APP = manifest.id;
 
 /** How long the selected value stays highlighted after a wheel press or turn. */
-const HIGHLIGHT_MS = 10_000;
+const HIGHLIGHT_MS = 4_000;
 /** Wheel changes are sent at most this often, and only the latest value. */
 const SEND_DEBOUNCE_MS = 150;
 /** How often the light is read, so changes made elsewhere show up. Doubles on each failure, up to POLL_MAX_MS. */

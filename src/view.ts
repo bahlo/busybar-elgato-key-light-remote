@@ -1,7 +1,7 @@
 // What the two displays show, as DisplayDraw elements built from the app's state. Nothing here talks to a device.
 //
 // Front: 72x16 RGB. A brightness gauge on the left, then brightness and color temperature. The value the wheel
-// changes gets an inverted box for a while after a wheel press or turn.
+// changes gets an outline for a while after a wheel press or turn.
 // Back: 160x80 grayscale, its right 12 px are the firmware's status bar. The light's address, firmware and status,
 // and the error in full when there is one.
 
@@ -29,7 +29,6 @@ export interface ViewState {
 }
 
 const WHITE = "#FFFFFFFF";
-const BLACK = "#000000FF";
 const DIM = "#505050FF";
 const RED = "#FF3020FF";
 const NONE = "#00000000";
@@ -126,19 +125,19 @@ function front(state: ViewState): Element[] {
 
   for (const value of values) {
     const boxed = state.highlighted && state.selected === value.field;
-    // The box is always there, empty when not highlighted, so highlighting never needs a DisplayClear.
+    // The outline is always there, invisible when not highlighted, so highlighting never needs a DisplayClear.
     elements.push(
       {
         id: `${value.field}_box`,
         type: "rectangle",
         x: value.cx - Math.floor(value.boxWidth / 2),
-        y: 2,
+        y: 1,
         width: value.boxWidth,
-        height: 12,
+        height: 14,
         radius: 2,
-        fill: "solid",
-        fill_colors: [boxed ? value.color : NONE],
-        border_width: 0,
+        fill: "none",
+        border_width: 1,
+        border_color: boxed ? value.color : NONE,
         z_index: 1,
       },
       {
@@ -146,7 +145,7 @@ function front(state: ViewState): Element[] {
         type: "text",
         text: value.text,
         font: "normal",
-        color: boxed ? BLACK : value.color,
+        color: value.color,
         x: value.cx,
         y: MID_Y,
         align: "center",
