@@ -60,8 +60,8 @@ function dim(color: string, factor: number): string {
 }
 
 // Front layout. Measured in the `condensed` font: "100%" is 23 px wide, "7000K" 26 px. The outlines are 4 px wider.
-const GAUGE_X = 0;
-const GAUGE_W = 4;
+const GAUGE_X = 1;
+const GAUGE_W = 2;
 const BRIGHTNESS_BOX_W = 27;
 const TEMPERATURE_BOX_W = 30;
 const MID_Y = 8;
@@ -96,19 +96,7 @@ function valueCenters(withPresets: boolean): { brightness: number; temperature: 
 function front(state: ViewState): Element[] {
   const { light, status } = state;
   const gaugeColor = status === "error" ? RED : light?.on ? tint(light.kelvin) : DIM;
-  const elements: Element[] = [
-    {
-      id: "gauge",
-      type: "rectangle",
-      x: GAUGE_X,
-      y: 1,
-      width: GAUGE_W,
-      height: 14,
-      fill: "none",
-      border_width: 1,
-      border_color: gaugeColor,
-    },
-  ];
+  const elements: Element[] = [];
 
   if (!light) {
     const text = status === "no_ip" ? "Set light IP" : status === "error" ? "No light" : "Connecting";
@@ -126,14 +114,15 @@ function front(state: ViewState): Element[] {
   }
 
   if (light.on && light.brightness > 0) {
-    // The frame's inside is 12 px tall; any brightness above 0 shows at least one row.
-    const height = Math.max(1, Math.round((12 * light.brightness) / 100));
+    // Up to 14 px tall, from y 1 to 14 like the outlines; 1 %, the lowest the wheel goes, is a single row. A light set
+    // to 0 elsewhere shows no bar.
+    const height = Math.max(1, Math.round((14 * light.brightness) / 100));
     elements.push({
       id: "gauge_fill",
       type: "rectangle",
-      x: GAUGE_X + 1,
-      y: 14 - height,
-      width: GAUGE_W - 2,
+      x: GAUGE_X,
+      y: 15 - height,
+      width: GAUGE_W,
       height,
       fill: "solid",
       fill_colors: [gaugeColor],
