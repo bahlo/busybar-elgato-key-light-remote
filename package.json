@@ -1,9 +1,10 @@
 {
-  "name": "busybar-elgato-keylight-air",
+  "name": "busybar-elgato-key-light",
   "private": true,
   "version": "0.1.0",
-  "description": "Control an Elgato Key Light Air",
+  "description": "Control an Elgato Key Light",
   "author": "Arne Bahlo <hey@arne.me>",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "typecheck": "tsc",

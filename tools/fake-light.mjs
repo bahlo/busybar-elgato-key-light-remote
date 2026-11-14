@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// A fake Elgato Key Light Air for developing the app without a light, or for making a light misbehave on purpose.
+// A fake Elgato Key Light, posing as a Key Light Air, for developing the app without a light, or for making a light
+// misbehave on purpose.
 //
 // It serves the light's local HTTP API (the same paths, methods and JSON as a real Key Light) and can be told, while it
 // runs, to answer late, not at all, with an HTTP error, with garbage, or to drop the connection. Commands come from its
@@ -148,7 +149,9 @@ function setLight(words) {
     if (key === "on" && (value === 0 || value === 1)) next.on = value;
     else if (key === "brightness" && value >= 0 && value <= 100) next.brightness = Math.round(value);
     else if (key === "temperature" && value >= MIRED_MIN && value <= MIRED_MAX) next.temperature = Math.round(value);
-    else if (key === "kelvin" && value >= 2900 && value <= 7000) next.temperature = Math.round(1e6 / value);
+    // 2900 K is 344.8 mireds: keep it in the range a real light takes.
+    else if (key === "kelvin" && value >= 2900 && value <= 7000)
+      next.temperature = Math.min(MIRED_MAX, Math.max(MIRED_MIN, Math.round(1e6 / value)));
     else throw new CommandError(`"${word}" is out of range: on=0|1, brightness=0-100, temperature=${MIRED_MIN}-${MIRED_MAX}, kelvin=2900-7000`);
   }
   Object.assign(light, next);

@@ -1,214 +1,152 @@
-# Key Light
+# Key Light for BUSY Bar
 
-Control an Elgato Key Light Air from a BUSY Bar: power, brightness and color temperature, over the light's local HTTP
-API. The app runs on the BUSY Bar itself; no computer needs to be on.
+Control your Elgato Key Light from your BUSY Bar: turn it on and off, set brightness and color temperature with
+the wheel, and switch between four presets. The app runs on the BUSY Bar itself and talks to the light over your
+network, so no computer has to be on.
+
+![Key Light on a BUSY Bar: a brightness bar, 40 %, 4700 K and the preset column](screenshot.png)
+
+## Features
+
+- **Power** with the Start/Pause button.
+- **Brightness and color temperature** on the wheel, from 1 % to 100 % and from 2900 K to 7000 K.
+- **Four presets** you define yourself, one turn of the wheel away.
+- **Stays in sync** with Elgato Control Center: changes made there show up within a few seconds.
+- **Status at a glance** on the back display: the light's name, address, firmware and connection.
+
+## Setup
+
+1. **Give the light a fixed IP address.** Look up the light's address in Elgato Control Center or your router, and
+   reserve it in your router (a DHCP reservation), so it doesn't change. The BUSY Bar can't look up `.local` names, so
+   the app needs the number.
+2. **Install the app** on your BUSY Bar. See [Building from source](#building-from-source) below.
+3. **Enter the address.** Open your BUSY Bar's web interface (its IP address in a browser), go to the Key Light app's
+   settings and set **Key Light IP address**, e.g. `192.168.1.20`. Add a port only if your light uses another one
+   than 9123.
+4. **Start the app** from APPS on your BUSY Bar.
+
+The BUSY Bar and the light have to be on the same network. Key Lights only connect to 2.4 GHz Wi-Fi.
 
 ## Using it
 
-1. Find the light's IP address (in Elgato Control Center, or your router). Give the light a fixed DHCP lease, because
-   the BUSY Bar cannot resolve `.local` names.
-2. Open the BUSY Bar's web interface (its IP address in a browser), go to the Key Light app's settings and set
-   **Key Light IP address**. `192.168.1.20` and `192.168.1.20:9123` both work.
-3. Start the app.
-
-| Control | Action |
+| Control | What it does |
 | --- | --- |
-| Start / Pause | Turn the light on or off |
-| Wheel press | Select brightness, color temperature or the presets, in turn; the selection is outlined for 4 s |
-| Wheel turn | Change the selection: 1 % or 50 K per click, 5 % or 200 K when turned fast; on the presets, move up or down the list |
-| Back | Leave the app |
+| **Start/Pause** | Turns the light on or off |
+| **Wheel press** | Selects brightness, color temperature or the presets, in turn. The selection is outlined for 4 seconds |
+| **Wheel turn** | Changes the selection: 1 % or 50 K per click, 5 % or 200 K when you turn fast. On the presets, steps through them |
+| **Back** | Leaves the app |
 
-The front display shows a brightness gauge tinted with the light's color, the brightness, the color temperature and,
-on the right, the presets. The gauge turns red when the light does not answer. The back display shows the light's
-name, IP address, firmware, connection status and, when there is one, the full error.
+The wheel always works on what you last changed. Pressing it only to look around doesn't stick: when the outline
+disappears, the wheel goes back to the value you last changed. After the app starts, it changes the brightness.
 
-### Presets
+### The front display
 
-The column of small squares on the right holds four presets, each in its color. The active one is lit, the others are
-dimmed. Picking a preset sets its brightness and color temperature and turns the light on. Changing a value by hand,
-on the BUSY Bar or in Control Center, leaves no preset active, and all squares dimmed. With none active, turning the
-wheel down starts at the first preset and turning it up at the last.
+- **Left:** a bar that grows with the brightness, in the color of the light.
+- **Middle:** the brightness and the color temperature, tinted in the light's color. Both are dimmed while the light
+  is off.
+- **Right:** the four presets as small squares, each in its color. The one matching the light is lit.
 
-In the app's settings, **Show presets** turns the column on or off, and **Preset 1 Brightness** (in %) and **Preset 1
-Temperature** (in K) to **Preset 4 Brightness** and **Preset 4 Temperature** set the presets. The defaults are 100 % at
-5600 K, 70 % at 4500 K, 40 % at 3500 K and 15 % at 2900 K. The app can only read its settings, so presets are changed
-there, not on the light's screen.
+### The back display
 
-The app reads the light every 5 s, so changes made in Control Center show up. When the light does not answer, it
-waits longer between tries, up to 30 s. Wheel changes are sent at most every 150 ms, one request at a time.
+The light's name (or its model, if you haven't named it in Control Center), its IP address, firmware version and
+connection status. When something goes wrong, the full error is shown below.
+
+## Presets
+
+Turn to the presets with the wheel button and step through them by turning. Picking a preset sets its brightness and
+color temperature and turns the light on. As soon as you change a value by hand, here or in Control Center, no preset
+is active and all four squares are dimmed.
+
+Set the presets in the app's settings:
+
+| Setting | Default |
+| --- | --- |
+| **Show presets** | On. Turn it off to hide the column; the values then use the full width |
+| **Preset 1 Brightness** / **Preset 1 Temperature** | 100 % / 5600 K |
+| **Preset 2 Brightness** / **Preset 2 Temperature** | 70 % / 4500 K |
+| **Preset 3 Brightness** / **Preset 3 Temperature** | 40 % / 3500 K |
+| **Preset 4 Brightness** / **Preset 4 Temperature** | 15 % / 2900 K |
+
+The app can read its settings but not change them, so presets are set in the settings, not on the bar.
+
+## Troubleshooting
+
+| You see | What to do |
+| --- | --- |
+| **Set light IP** | No address is set yet. Enter it in the app's settings, see [Setup](#setup). |
+| **Connecting** for a while | The app is waiting for the light's first answer, which can take up to 5 seconds. |
+| **No light**, or a red bar | The light doesn't answer. Check that it's powered and on the network, and that the address in the settings is still right. The back display shows the exact error. |
+| *Inactivity timeout* on the back | Nothing answered at that address. The light may have a new address, or it's on another network. |
+| *socket error* on the back | The connection was refused or dropped. Check the address and port. |
+
+While the light doesn't answer, the app tries again less often, up to every 30 seconds, and picks up as soon as it's
+back.
+
+## Compatibility
+
+Works with the Elgato **Key Light**, **Key Light Air** and **Key Light Mini**, which share the same local API for power,
+brightness and color temperature. Tested on the BUSY Bar Emulator (firmware 1.3.1) against a simulated Key Light Air,
+the one in [Testing without a light](#testing-without-a-light).
+
+## Building from source
+
+You need Node 24 (the version in `.nvmrc`; Node 26 doesn't build).
+
+```sh
+npm install
+npm run build                             # builds dist/me.arne.keylight.tgz
+npm run app:install                       # installs it on a BUSY Bar connected over USB
+npm run app:install -- --addr <bar-ip>    # or over Wi-Fi (add --password <password> if set)
+npm run app:run                           # starts it
+```
+
+`npm run typecheck` checks the types. The code is in `src/`: `main.ts` runs the app, `elgato.ts` talks to the light,
+`view.ts` draws both displays and `presets.ts` reads the presets.
 
 ## Testing without a light
 
-`tools/fake-light.mjs` is a fake Key Light Air: the same paths, methods and JSON as a real one, plus faults you switch
-on while it runs. It needs only Node.
+`tools/fake-light.mjs` is a fake Key Light, posing as a Key Light Air. It answers like a real one and can be told to
+misbehave while it runs.
+It needs only Node.
 
 ```sh
-npm run fake-light            # the light on 0.0.0.0:9123, its control port on 127.0.0.1:9124
+npm run fake-light    # the light on port 9123, its control port on 127.0.0.1:9124
 ```
 
-Set the app's **Key Light IP address** to your computer's address on the network (not `127.0.0.1`: that is the BUSY
-Bar itself). Then type commands into the fake's terminal, or send them from a script:
+Set the app's **Key Light IP address** to your computer's address on the network, not `127.0.0.1`, which is the BUSY
+Bar itself. With the BUSY Bar Emulator, allow the port first: `busy-emulator allow-local 9123`.
+
+Then type commands into the fake's terminal, or send them from a script:
 
 ```sh
-curl -d 'fault hang' localhost:9124                  # accepts requests, never answers
-curl -d 'fault http 503 only=put times=1' localhost:9124
-curl -d 'set on=0 kelvin=3200' localhost:9124        # change the light as Control Center would
-curl -d 'clear' localhost:9124
+curl -d 'set on=0 kelvin=3200' localhost:9124    # change the light as Control Center would
+curl -d 'fault hang' localhost:9124              # accept requests, never answer
+curl -d 'clear' localhost:9124                   # back to normal
 ```
 
 | Command | Effect |
 | --- | --- |
-| `fault reset` | closes the connection without answering |
-| `fault hang` | never answers; the BUSY Bar gives up after 5 s |
-| `fault http <status>` | answers with that HTTP status |
-| `fault garbage` | answers 200 with a body that is not JSON |
-| `fault bad-shape` | answers 200 with JSON in the wrong shape |
-| `fault ignore-writes` | answers PUTs with 200 and the old state, changing nothing |
-| `latency <ms>` | answers every request that much later |
-| `offline` / `online` | refuses connections / accepts them again |
-| `set …`, `toggle` | changes the light from outside the app |
+| `set on=… brightness=… kelvin=…`, `toggle` | Changes the light from outside the app |
+| `fault reset` | Closes the connection without answering |
+| `fault hang` | Never answers; the BUSY Bar gives up after 5 seconds |
+| `fault http <status>` | Answers with that HTTP status |
+| `fault garbage` | Answers with a body that isn't JSON |
+| `fault bad-shape` | Answers with JSON in the wrong shape |
+| `fault ignore-writes` | Accepts changes without applying them |
+| `latency <ms>` | Answers every request that much later |
+| `offline` / `online` | Refuses connections / accepts them again |
 | `clear`, `status`, `help` | |
 
-A fault takes `only=get|put`, `times=<n>` (fail the next n requests, then recover) and `rate=<0..1>` (fail that share
-of requests). `--fault "<fault>"` and `--latency <ms>` start the fake with one; `--help` lists the other options.
+A fault takes `only=get|put`, `times=<n>` (the next n requests, then it recovers) and `rate=<0..1>` (that share of
+requests). `--help` lists the start options, e.g. `--name` and `--port`.
 
-With BUSY Bar Emulator, the app may reach your computer only on ports you allow:
-`busy-emulator allow-local 9123`.
+## CI and releases
 
-## Getting started
+CI runs on [Depot CI](https://depot.dev/docs/ci/overview), with the workflows in `.depot/workflows/`: every pull
+request and push to `main` is typechecked and built. Pushing a tag that matches the `version` in
+`src/appmeta/manifest.json` (e.g. `0.1.0`) attaches `me.arne.keylight-<version>.tgz` to a GitHub release. If Depot
+CI's token can't create releases, add a GitHub token with `contents: write` as the Depot CI secret `RELEASE_TOKEN`.
 
-```sh
-npm install
-npm run build         # build the app into dist/me.arne.keylight.tgz
-npm run app:install   # install it on the BUSY Bar connected over USB
-npm run app:run       # launch the installed app
-```
+## License
 
-The app's id is `me.arne.keylight`, set in `src/appmeta/manifest.json`. An id is `<namespace>.<app>`, at most 32 characters, made of Latin letters, digits, underscores, dashes, and dots, and not starting with a dot. If yours still says `app.example`, change it to your own namespace before publishing.
-
-## Layout
-
-`src/` is the app — everything in it is yours to edit.
-
-The entry point is `src/main.ts` (or `src/main.js`). The name is fixed: the build turns it into `scripts/main.js`, the file the BUSY Bar starts. Any imported modules are emitted as separate files alongside it in `scripts/`, unless `npm run build -- --bundle` inlines them.
-
-`src/main.ts` is run from top to bottom, not imported: it starts the app by calling `main()` at the end and must not export anything. Imported modules can use standard exports.
-
-```
-my-app/
-├── src/                          the app
-│   ├── main.ts                   the entry point: function main(), called at the end
-│   ├── appmeta/
-│   │   ├── manifest.json         id, name, version, api_version
-│   │   ├── settings.json         the settings screen — optional
-│   │   ├── icon_front_8x8.png    front icon, 8×8 color — optional
-│   │   └── icon_back_11x11.png   back icon, 11×11 grayscale — optional
-│   ├── images/
-│   ├── animations/
-│   └── sounds/
-├── shared/                       app-level helpers, imported as @shared/*
-```
-
-Both icons are optional; without them a default is used.
-
-## Resources
-
-Anything in `src/` that isn't a source file is copied into the package, sorted by what the BUSY Bar can read:
-
-| Extension | Destination |
-| --- | --- |
-| `.png` `.image` | `images/` |
-| `.anim` | `animations/` |
-| `.snd` | `sounds/` |
-| anything else | `resources/` |
-
-A file in `src/images`, `src/animations` or `src/sounds` keeps its folder as long as the BUSY Bar reads its format.
-
-`images/`, `animations/` and `sounds/` hold only those formats. An image, animation or sound in another format — `.jpg`, `.gif`, `.svg`, `.wav`, `.mp3` and the like — goes to `resources/`, and the build warns that the device cannot read it.
-
-Everything the app draws goes through the layout helpers in `@busy-app/busy-lib`: build a tree out of `row` / `column` / `stack`, hand it to `render()`, and send the result with `device.DisplayDraw()`. The screen is 72×16 pixels.
-
-## Input
-
-`listen("input", handler)` delivers the device keys: `ok`, `start` and `back` with a `press` / `release` / `short` / `long` / `repeat` action, and `encoder` with a `delta` of `1` or `-1`. It returns an unbind function.
-
-Use `short` as the default action for a button press: it fires once, after a normal press and release. `press` fires immediately on key down and is followed by `short`, so handling `press` as a tap can react twice. Use `long` and `repeat` for hold gestures.
-
-## Commands
-
-| Command | Description |
-| --- | --- |
-| `npm run build` | empties `dist/` and builds the package into `dist/me.arne.keylight.tgz` |
-| `npm run build -- --emit dir` | leaves the `me.arne.keylight/` folder instead of the `.tgz` |
-| `npm run build -- --emit both` | leaves the folder and the `.tgz` |
-| `npm run build -- --out <path>` | builds into `<path>` instead, replacing only this app's package there |
-| `npm run build -- --tgz-name <name>` | names the `.tgz`, e.g. `"{id}-{version}.tgz"` |
-| `npm run build -- --no-minify` | readable output, for debugging |
-| `npm run build -- --bundle` | inlines every module into one `main.js` |
-| `npm run build -- --addr <host>` | sets the BUSY Bar address the app connects to, `localhost` by default |
-| `npm run typecheck` | type-checks the app |
-| `npm run app:install` | installs `dist/me.arne.keylight.tgz` on the BUSY Bar; build it first with `npm run build` |
-| `npm run app:uninstall` | removes the app from the BUSY Bar, keeping its settings |
-| `npm run app:run` | launches the installed app |
-| `npm run app:stop` | quits the running app |
-
-The four `app:` commands talk to the BUSY Bar connected over USB. For a device connected over Wi-Fi, pass `--addr <host>` with its network IP address or hostname, and `--password <password>` if password protection is enabled:
-
-```sh
-npm run app:install -- --addr <host>
-npm run app:install -- --addr <host> --password <password>
-```
-
-## Build output
-
-The package folder is named after the app id:
-
-```
-dist/
-└── me.arne.keylight/
-    ├── appmeta/manifest.json
-    ├── scripts/main.js
-    └── images/ animations/ sounds/ resources/
-```
-
-By default the build packs that folder into `dist/me.arne.keylight.tgz`, with the folder itself at the root of the archive, and removes the folder; `--emit dir` keeps only the folder, `--emit both` keeps both. `--tgz-name` gives the archive another name; `{id}` and `{version}` in it are replaced with the manifest values.
-
-## CI and releasing
-
-CI runs on [Depot CI](https://depot.dev/docs/ci/overview); the workflows are in `.depot/workflows/`. `ci.yml`
-typechecks and builds every pull request and every push to `main`.
-
-Pushing a git tag matching the manifest `version` (e.g. `0.1.0`) builds the app and attaches `me.arne.keylight-<version>.tgz` to a GitHub release. The release notes open with the app's name, id, version and API version. The release fails when the tag differs from the manifest `version`. If Depot CI's token may not create releases, add a GitHub token with `contents: write` as the Depot CI secret `RELEASE_TOKEN`.
-
-## Manifest
-
-`src/appmeta/manifest.json` carries the app's identity and a couple of knobs (see the [apps documentation](https://github.com/busy-app/busybar-firmware/blob/dev/documentation/JavaScript%20Applications.dox.md)):
-
-| Field | Description |
-| --- | --- |
-| `format_version` | manifest format, `1` — required |
-| `id` | up to 32 characters — required |
-| `name` | display name — required |
-| `version` | semver, e.g. `1.0.0` — required |
-| `api_version` | minimum BUSY Bar HTTP API version the app needs, e.g. `27.12.0` — required |
-| `description`, `author` | free form, default `""` |
-| `heap_size_kib` | memory for the app heap, 1–512, default 128 |
-| `debug` | when true, shown only in developer mode, default false |
-
-Raise `heap_size_kib` if the app runs out of memory.
-
-## Node version
-
-The app builds on Node 24 — the version in `.nvmrc` and the range `engines` allows. Node 26 breaks the build and is excluded. With `fnm` or `nvm` installed, `fnm use` / `nvm use` picks the right one up from `.nvmrc`.
-
-## Settings
-
-To give the app a settings screen, add `src/appmeta/settings.json` describing the fields, then read the stored values:
-
-```ts
-import { loadValues } from "@shared/settings";
-
-const values = await loadValues();
-```
-
-`loadValues()` asks the BUSY Bar, which answers with every field: the saved value, or the field's `default` from `settings.json`. It returns `null` only when the app has no settings file or the BUSY Bar did not answer.
+[MIT](LICENSE)
