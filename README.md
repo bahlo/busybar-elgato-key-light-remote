@@ -25,6 +25,44 @@ connection status and, when there is one, the full error.
 The app reads the light every 5 s, so changes made in Control Center show up. When the light does not answer, it
 waits longer between tries, up to 30 s. Wheel changes are sent at most every 150 ms, one request at a time.
 
+## Testing without a light
+
+`tools/fake-light.mjs` is a fake Key Light Air: the same paths, methods and JSON as a real one, plus faults you switch
+on while it runs. It needs only Node.
+
+```sh
+npm run fake-light            # the light on 0.0.0.0:9123, its control port on 127.0.0.1:9124
+```
+
+Set the app's **Key Light IP address** to your computer's address on the network (not `127.0.0.1`: that is the BUSY
+Bar itself). Then type commands into the fake's terminal, or send them from a script:
+
+```sh
+curl -d 'fault hang' localhost:9124                  # accepts requests, never answers
+curl -d 'fault http 503 only=put times=1' localhost:9124
+curl -d 'set on=0 kelvin=3200' localhost:9124        # change the light as Control Center would
+curl -d 'clear' localhost:9124
+```
+
+| Command | Effect |
+| --- | --- |
+| `fault reset` | closes the connection without answering |
+| `fault hang` | never answers; the BUSY Bar gives up after 5 s |
+| `fault http <status>` | answers with that HTTP status |
+| `fault garbage` | answers 200 with a body that is not JSON |
+| `fault bad-shape` | answers 200 with JSON in the wrong shape |
+| `fault ignore-writes` | answers PUTs with 200 and the old state, changing nothing |
+| `latency <ms>` | answers every request that much later |
+| `offline` / `online` | refuses connections / accepts them again |
+| `set …`, `toggle` | changes the light from outside the app |
+| `clear`, `status`, `help` | |
+
+A fault takes `only=get|put`, `times=<n>` (fail the next n requests, then recover) and `rate=<0..1>` (fail that share
+of requests). `--fault "<fault>"` and `--latency <ms>` start the fake with one; `--help` lists the other options.
+
+With BUSY Bar Emulator, the app may reach your computer only on ports you allow:
+`busy-emulator allow-local 9123`.
+
 ## Getting started
 
 ```sh

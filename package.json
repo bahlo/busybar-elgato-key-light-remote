@@ -11,7 +11,8 @@
     "app:install": "busy-cli app install",
     "app:uninstall": "busy-cli app uninstall",
     "app:run": "busy-cli app run",
-    "app:stop": "busy-cli app stop"
+    "app:stop": "busy-cli app stop",
+    "fake-light": "node tools/fake-light.mjs"
   },
   "engines": {
     "node": ">=24 <26"
