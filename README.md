@@ -26,7 +26,7 @@ limitation — see [Setup](#setup)); seeing its status does not.
    reserve it in your router (a DHCP reservation), so it doesn't change. The BUSY Bar can't look up `.local` names, so
    the app needs the number.
 2. **Install the app** on your BUSY Bar: [build it from source](#building-from-source), or take
-   `me.arne.keylight-<version>.tgz` from a release and [install that](#installing-a-release).
+   `me.arne.keylight-remote-<version>.tgz` from a release and [install that](#installing-a-release).
 3. **Run the relay.** To change the light, start `tools/http11-relay.mjs` on a computer on your network, pointed at the
    light: `node tools/http11-relay.mjs --light 192.168.1.20`. It re-sends the app's requests to the light over
    HTTP/1.1, because the BUSY Bar sends HTTP/1.0 and a Key Light rejects changes over it
@@ -141,12 +141,12 @@ Linux, or a process manager such as pm2.
 
 ## Installing a release
 
-Each [release](../../releases) has the built app attached as `me.arne.keylight-<version>.tgz`. Install it with
+Each [release](../../releases) has the built app attached as `me.arne.keylight-remote-<version>.tgz`. Install it with
 [busy-cli](https://www.npmjs.com/package/@busy-app/cli), which needs Node:
 
 ```sh
-npx @busy-app/cli app install me.arne.keylight-0.1.0.tgz                    # a BUSY Bar connected over USB
-npx @busy-app/cli app install me.arne.keylight-0.1.0.tgz --addr <bar-ip>    # or over Wi-Fi
+npx @busy-app/cli app install me.arne.keylight-remote-0.1.0.tgz                    # a BUSY Bar connected over USB
+npx @busy-app/cli app install me.arne.keylight-remote-0.1.0.tgz --addr <bar-ip>    # or over Wi-Fi
 ```
 
 Over Wi-Fi the BUSY Bar's HTTP API has to be on (in its web interface); add `--password <password>` if you set one.
@@ -157,7 +157,7 @@ You need Node 24 (the version in `.nvmrc`; Node 26 doesn't build).
 
 ```sh
 npm install
-npm run build                             # builds dist/me.arne.keylight.tgz
+npm run build                             # builds dist/me.arne.keylight-remote.tgz
 npm run app:install                       # installs it on a BUSY Bar connected over USB
 npm run app:install -- --addr <bar-ip>    # or over Wi-Fi (add --password <password> if set)
 npm run app:run                           # starts it
@@ -212,7 +212,7 @@ relay (see [Changing the light needs a relay](#changing-the-light-needs-a-relay)
 
 CI runs on [Depot CI](https://depot.dev/docs/ci/overview), with the workflows in `.depot/workflows/`: every pull
 request and push to `main` is typechecked, tested and built. Pushing a tag that matches the `version` in
-`src/appmeta/manifest.json` (e.g. `0.1.0`) attaches `me.arne.keylight-<version>.tgz` to a GitHub release. If Depot
+`src/appmeta/manifest.json` (e.g. `0.1.0`) attaches `me.arne.keylight-remote-<version>.tgz` to a GitHub release. If Depot
 CI's token can't create releases, add a GitHub token with `contents: write` as the Depot CI secret `RELEASE_TOKEN`.
 
 ## License
